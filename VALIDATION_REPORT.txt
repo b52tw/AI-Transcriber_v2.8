@@ -1,0 +1,28 @@
+Junba AI Transcriber v2.8 - Validation Report
+==============================================
+Date: 2026-09-30
+
+User-reported v2.7 failure:
+- RuntimeError from OpenVINO Core.add_extension
+- openvino_tokenizers.dll failed with Windows error 126
+- Failure occurred before actual NPU/GPU Whisper compilation.
+
+Root-cause hardening in v2.8:
+- OpenVINO ABI trio pinned:
+  openvino==2026.4.0
+  openvino-tokenizers==2026.4.0.0
+  openvino-genai==2026.4.0.0
+- PyInstaller explicitly collects all three OpenVINO packages including binaries/data.
+- Runtime prepares Windows DLL search directories before importing OpenVINO GenAI.
+- Binary self-test now calls OpenVINO Core.add_extension(openvino_tokenizers.dll), reproducing the exact v2.7 failure path.
+- GitHub Actions builds/tests Portable first. Artifact is uploaded only after DLL self-test succeeds.
+- Single EXE receives the same DLL self-test and is uploaded only if it succeeds.
+
+Local source validation in this Linux environment:
+- python compileall: PASS
+- pytest: 18 passed
+
+Limitations:
+- Intel AI Boost NPU and Intel Arc GPU cannot be physically exercised in this Linux container.
+- Final Windows DLL loader validation is intentionally performed by GitHub Actions windows-latest.
+- Actual NPU inference remains dependent on the user's Intel NPU/graphics driver and available RAM.
